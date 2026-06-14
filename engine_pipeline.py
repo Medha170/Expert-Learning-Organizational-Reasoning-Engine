@@ -259,9 +259,13 @@ if __name__ == "__main__":
         # 3. Version 2 Memory Augmented Run
         v2_out = run_version_2_engine(question, sid)
         v2_conf = calculate_confidence_score(v2_out, missed_docs_count=0) # Gaps resolved
+
+        # Calculate delta dynamically
+        confidence_delta = v2_conf - v1_conf
+        direction = "increased" if confidence_delta >= 0 else "regressed"
         
         print(f"✅ V2 Output generated. (Confidence Score: {v2_conf}%)")
-        print(f"📈 Quality Loop Status: Confidence increased from {v1_conf}% ➔ {v2_conf}%!")
+        print(f"📈 Quality Loop Status: Confidence {direction} from {v1_conf}% ➔ {v2_conf}%! (Delta: {confidence_delta}%)")
         print("-" * 80)
         
     print("\n========================================================================")

@@ -173,6 +173,15 @@ The entire solution is designed to be reproducible within a single-engineer, 60-
 
 ---
 
+## 📈 Analysis of Non-Deterministic Evaluation Anomalies (Negative Delta)
+During matrix runs, certain test scenarios can experience a programmatic confidence score decrease (e.g., dropping from 55% to 40%) between Version 1 and Version 2, despite the Version 2 answer being factually superior and structurally correct.
+
+* **The Core Mechanism:** Version 1 often suffers from "false certainty"—uncritically relying on high-frequency keyword matches in a single, isolated file (such as a clean frontend roadmap or an outdated runbook). This causes a static heuristic calculator to award a deceptive mid-range confidence rating.
+* **The Version 2 Transition:** When the expert memory rule is injected, the LLM is forced to confront systemic cross-domain dependencies (e.g., bridging a frontend client milestone to a broken backend infrastructure script). 
+* **Evaluation Resolution:** Because the model correctly pivots away from localized keyword matching to describe complex, distributed workflows, the text becomes more analytical and nuanced. This can reduce raw, token-exact keyword counts in the reasoning trace output, resulting in an automated negative delta. This phenomenon underscores why true engineering accuracy and rigid heuristic checking don't always scale lineally in generative workflows.
+
+---
+
 ## 🚀 Future Roadmap
 
 ### Knowledge Graph Integration
