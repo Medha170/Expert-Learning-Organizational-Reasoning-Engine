@@ -1,0 +1,7 @@
+.env
+tmp
+local_vector_db/
+lib/
+feedback_store/
+__pycache__/
+.venv/

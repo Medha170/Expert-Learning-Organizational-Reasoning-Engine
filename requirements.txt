@@ -1,0 +1,14 @@
+# Local Persistent Vector Database
+chromadb==0.4.24
+
+# AI Orchestration & API Clients
+openai==1.14.1
+langchain-community==0.0.28
+
+# Web UI Dashboard & Interactive Visualization
+streamlit==1.32.2
+networkx==3.2.1
+pyvis==0.3.2
+
+# Secure Environment Configuration
+python-dotenv==1.0.1

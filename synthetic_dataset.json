@@ -1,0 +1,264 @@
+{
+  "scenarios": [
+    {
+      "scenario_id": "SCENARIO-01-NETWORKING",
+      "title": "The Broken Egress Proxy Pipeline (Root Cause / Infrastructure Cascade)",
+      "description": "Tests if the engine can bypass superficial application code fixes and follow an infrastructure paper trail to pinpoint hidden network topology faults.",
+      "slack_feed": {
+        "question_id": "SLACK-Q-409",
+        "question": "Why is the payment service deployment failing in staging? Alex says his code changes are just floating point math fixes.",
+        "mock_expert_answer": "The deployment is failing because Sam's infrastructure commit (a4f29c1) enabled egress proxy routing (PROXY_ROUTING_ENABLED=true) to match the new SecOps firewall policy (WIKI-SEC-04). However, the payment service's config maps were never updated with the required egress proxy token. The connection timeout isn't a transient network blip; the gateway is intentionally dropping unauthenticated traffic from our node."
+      },
+      "knowledge_base": {
+        "wiki": [
+          {
+            "doc_id": "WIKI-PAY-01",
+            "title": "Payment Processing Service Architecture",
+            "content": "The Payment Processing Service (PPS) routes all user checkout actions to our external payment provider, Stripe. It operates inside our core Kubernetes cluster. Network access requires an active API key stored in HashiCorp Vault. Staging connects to Stripe sandbox.",
+            "owner": "FinTech Core Team"
+          },
+          {
+            "doc_id": "WIKI-SEC-04",
+            "title": "Staging Cluster Network Whitelisting Policy",
+            "content": "On Monday, June 8, 2026, the Infrastructure team updated firewall rules for the staging environment. All third-party external API communication must transit through our secure egress proxy gateway (IP: 192.168.42.105). Direct node-to-internet egress is permanently disabled.",
+            "owner": "SecOps Team"
+          }
+        ],
+        "jira": [
+          {
+            "ticket_id": "JIRA-FIN-882",
+            "summary": "Staging deployment failing on post-deployment health checks for payment-service",
+            "status": "BLOCKED",
+            "assignee": "Alex Chen (Junior Dev)",
+            "description": "Deployment pipeline runner failed at Step 4: Health Check. Error log logs/staging-payment-service.txt shows connection timeouts when attempting to reach the gateway endpoint.",
+            "comments": [
+              {
+                "author": "Alex Chen",
+                "text": "I checked the code changes in my current branch; none of them touch the network stack. I am stuck thinking it might be a transient cloud infrastructure or network routing blip."
+              }
+            ]
+          }
+        ],
+        "git": [
+          {
+            "commit_hash": "a4f29c1",
+            "author": "Sam Rogers (Infra Lead)",
+            "message": "chore: migrate staging config map to apply new secure egress proxy routing values",
+            "changes_summary": "Modified k8s/staging/payment-service-config.yaml. Switched PROXY_ROUTING_ENABLED from false to true. Added placeholder values for token validation."
+          },
+          {
+            "commit_hash": "7b81e42",
+            "author": "Alex Chen (Junior Dev)",
+            "message": "fix: update payment service currency conversion precision handling logic",
+            "changes_summary": "Modified src/currency/utils.java to format floating decimals to 4 points."
+          }
+        ]
+      }
+    },
+    {
+      "scenario_id": "SCENARIO-02-OWNERSHIP",
+      "title": "The Orphaned Microservice (System Ownership Matrix)",
+      "description": "Tests organizational tracking when original engineering teams have been dissolved, restructured, or abandoned across transition phases.",
+      "slack_feed": {
+        "question_id": "SLACK-Q-512",
+        "question": "Who owns the legacy auth-token-validator service? It is throwing 500 errors in production and the original Core-Auth channel is archived.",
+        "mock_expert_answer": "While WIKI-AUTH-10 originally assigned ownership to the Core-Auth Team, that team was dissolved during the Q1 2026 reorganization. According to JIRA-MGMT-991, all session validation modules were officially handed over to the Identity & Access Team (IAM). Priya Sharma is the active IAM lead who handles emergency on-call rotations for this component."
+      },
+      "knowledge_base": {
+        "wiki": [
+          {
+            "doc_id": "WIKI-AUTH-10",
+            "title": "Authentication Token Validator Microservice",
+            "content": "The auth-token-validator manages OAuth2 verification strings for consumer sessions. Created in 2024, it is maintained by the Core-Auth Team.",
+            "owner": "Core-Auth Team"
+          }
+        ],
+        "jira": [
+          {
+            "ticket_id": "JIRA-MGMT-991",
+            "summary": "Q1 2026 Engineering Reorg and Service Re-allocations",
+            "status": "CLOSED",
+            "assignee": "Engineering Leadership",
+            "description": "Deprecating Core-Auth engineering track. Shifting active modules. All session validation and token infrastructure are handed over to Identity & Access Team (IAM).",
+            "comments": [
+              {
+                "author": "Director of Eng",
+                "text": "Priya Sharma (IAM Lead) will coordinate the incoming transfer of repositories."
+              }
+            ]
+          }
+        ],
+        "git": [
+          {
+            "commit_hash": "e882a1b",
+            "author": "Former Employee Dave",
+            "message": "initial commit for token verification hooks",
+            "changes_summary": "Created base package structure."
+          }
+        ]
+      }
+    },
+    {
+      "scenario_id": "SCENARIO-03-MILESTONE-DELAY",
+      "title": "The Ghost Dependency (Project Milestone Bottleneck Tracking)",
+      "description": "Tests cross-functional dependency tracing where local repositories look completely clean, but execution is blocked by an external database migration crash.",
+      "slack_feed": {
+        "question_id": "SLACK-Q-602",
+        "question": "What is blocking the Mobile App v3.0 release milestone? The mobile repo has zero open bugs.",
+        "mock_expert_answer": "The Mobile App v3.0 release is blocked because it depends on the unified-profile-api endpoint (WIKI-MOB-99). While the mobile team finished their tasks, JIRA-PLAT-441 shows that the Platform Team's backend deployment was delayed because their database schema migration failed data integrity checks. It is a backend data mismatch bottleneck, not a mobile code issue."
+      },
+      "knowledge_base": {
+        "wiki": [
+          {
+            "doc_id": "WIKI-MOB-99",
+            "title": "Mobile App v3.0 Release Roadmap",
+            "content": "Mobile Client v3.0 introduces custom avatar profiles. Hard dependency: Requires the Platform Team's new 'unified-profile-api' service deployment to fetch assets.",
+            "owner": "Mobile Product Team"
+          }
+        ],
+        "jira": [
+          {
+            "ticket_id": "JIRA-PLAT-441",
+            "summary": "Deploy unified-profile-api to production environment",
+            "status": "FAILED",
+            "assignee": "Marcus Vance (Platform Dev)",
+            "description": "Production rollout aborted. Database schema script crashed on table constraints for legacy records.",
+            "comments": [
+              {
+                "author": "Marcus Vance",
+                "text": "Rolling back to v2.9 until data cleansing scripts finish execution. This impacts consumers relying on profile objects."
+              }
+            ]
+          }
+        ],
+        "git": [
+          {
+            "commit_hash": "c119022",
+            "author": "Mobile Dev Sarah",
+            "message": "feat: wire up profile engine to pull from new endpoint",
+            "changes_summary": "Pointed network calls to unified-profile-api."
+          }
+        ]
+      }
+    },
+    {
+      "scenario_id": "SCENARIO-04-ARCHITECTURE-HISTORY",
+      "title": "The Decoupling Rationale (Design History & Compliance Retrieval)",
+      "description": "Tests the system's ability to locate historical regulatory constraints that prevent developers from creating critical regressions during refactoring updates.",
+      "slack_feed": {
+        "question_id": "SLACK-Q-777",
+        "question": "Why did we implement custom polling logic inside the Notifications Engine instead of just plugging in standard Kafka event streaming?",
+        "mock_expert_answer": "We avoided Kafka because an architecture review (WIKI-ARCH-44) found that third-party regulatory laws require message processing delivery guarantees that our Kafka cluster's standard partition offset configuration couldn't cleanly guarantee at the time. JIRA-LEGAL-12 highlights that out-of-order event consumption would violate compliance mandates, which is why a transaction-locked relational poll mechanism was custom built by Tom in commit b19c302."
+      },
+      "knowledge_base": {
+        "wiki": [
+          {
+            "doc_id": "WIKI-ARCH-44",
+            "title": "Notification Subsystem Architecture Decision Record (ADR)",
+            "content": "Decision: Use relational DB polling over Kafka event streaming. Rationale: Event streaming systems can exhibit partition consumer delays or out-of-order execution during edge-case broker restarts. Our current legal audit compliance frameworks require absolute sequential ledger confirmation.",
+            "owner": "Architecture Guild"
+          }
+        ],
+        "jira": [
+          {
+            "ticket_id": "JIRA-LEGAL-12",
+            "summary": "Compliance Audit Sign-off on Notification Delivery Patterns",
+            "status": "APPROVED",
+            "assignee": "Legal-Tech Counsel",
+            "description": "Out-of-order notification streams risk sending account alert states prior to actual state mutation records, breaching regional financial transparency mandates.",
+            "comments": []
+          }
+        ],
+        "git": [
+          {
+            "commit_hash": "b19c302",
+            "author": "Tom Vance (Principal Architect)",
+            "message": "feat: replace message hub hooks with transactional state table polling loop",
+            "changes_summary": "Removed kafka consumer groups, initialized cron-driven state evaluation thread."
+          }
+        ]
+      }
+    },
+    {
+      "scenario_id": "SCENARIO-05-STALE-DOCUMENTATION",
+      "title": "The Stale Runbook Trap (Conflicting Source Resolution)",
+      "description": "Tests if the engine can resolve direct logical contradictions between an out-of-date wiki runbook and live, closed incident tickets.",
+      "slack_feed": {
+        "question_id": "SLACK-Q-812",
+        "question": "Redis is running out of memory in staging. The cache runbook says to trigger a hard FLUSHALL, but I want to make sure that won't break anything.",
+        "mock_expert_answer": "Do not run FLUSHALL. While runbook WIKI-CAD-09 recommends flushing on OOM, recent ticket JIRA-OPS-771 records that running FLUSHALL destroys the volatile session tokens stored alongside transient database mirrors, forcing an immediate cascading crash of the cluster gateway. The runbook is outdated; use the selective eviction script introduced by Riya in commit f44a102 instead."
+      },
+      "knowledge_base": {
+        "wiki": [
+          {
+            "doc_id": "WIKI-CAD-09",
+            "title": "Redis Cache Management Runbook",
+            "content": "If Redis cluster nodes hit maxmemory thresholds (>95% allocation) and evictions freeze, trigger a standard administrative FLUSHALL via the CLI to instantly restore processing pools.",
+            "owner": "Caching Infra Team"
+          }
+        ],
+        "jira": [
+          {
+            "ticket_id": "JIRA-OPS-771",
+            "summary": "FLUSHALL on Redis cluster caused catastrophic web gateway outage",
+            "status": "CLOSED",
+            "assignee": "Riya Kapoor (Site Reliability Eng)",
+            "description": "Post-Mortem: Flushing cached structures wiped live user session tokens. This triggered an instantaneous authentication failure cascade across 100% of connected active application requests.",
+            "comments": [
+              {
+                "author": "Riya Kapoor",
+                "text": "We need to update WIKI-CAD-09. Flushing is strictly banned. Moving forward, use the scan-and-evict tool for fine-grained key memory cleanups."
+              }
+            ]
+          }
+        ],
+        "git": [
+          {
+            "commit_hash": "f44a102",
+            "author": "Riya Kapoor (SRE)",
+            "message": "feat: add selective lua eviction scripts for maxmemory clearing safety",
+            "changes_summary": "Created scripts/evict_expired_sessions.lua targeting pattern-matched keys without dropping indices."
+          }
+        ]
+      }
+    },
+    {
+      "scenario_id": "SCENARIO-06-THIRD-PARTY-VENDOR",
+      "title": "The Stealth Vendor Deprecation (External API Dependency Breakage)",
+      "description": "Tests if the engine can correlate an unexpected application error string with an obscure external email advisory recorded in developer notes.",
+      "slack_feed": {
+        "question_id": "SLACK-Q-991",
+        "question": "Our analytics compilation jobs are suddenly throwing error code 'ERR_REV_403_DISABLED'. Is our internal cron scheduling worker corrupted?",
+        "mock_expert_answer": "The cron worker is functioning perfectly. The failure is driven by our external data analytics vendor, Segmentify. As logged in JIRA-DATA-330, Segmentify sent a product deprecation warning stating they were shutting down their legacy v1 ingestion endpoints on June 10, 2026. The application is hitting a 403 because our endpoints are stale. We must execute the v2 API upgrade outlined in wiki document WIKI-DATA-55."
+      },
+      "knowledge_base": {
+        "wiki": [
+          {
+            "doc_id": "WIKI-DATA-55",
+            "title": "Segmentify Analytics API V2 Upgrade Migration Steps",
+            "content": "Draft plan to migrate our tracking structures to Segmentify V2 protocols. Required to replace legacy endpoints before the vendor deprecates their security handshake certificates.",
+            "owner": "Data Analytics Pod"
+          }
+        ],
+        "jira": [
+          {
+            "ticket_id": "JIRA-DATA-330",
+            "summary": "Track vendor deprecation advisory for incoming ingestion hooks",
+            "status": "OPEN",
+            "assignee": "Spoorthy Rao (Data Engineer)",
+            "description": "Received vendor bulletin: Segmentify will completely cut off legacy ingestion paths on June 10, 2026. Unmigrated applications will throw automated security rejections (ERR_REV_403_DISABLED).",
+            "comments": []
+          }
+        ],
+        "git": [
+          {
+            "commit_hash": "d11099a",
+            "author": "Spoorthy Rao",
+            "message": "perf: adjust scheduling interval for batch analytics loop executions",
+            "changes_summary": "Changed cron mapping intervals from 30 minutes to 60 minutes inside deployment charts."
+          }
+        ]
+      }
+    }
+  ]
+}
